@@ -1,8 +1,10 @@
 {
   "name": "extremely-simple-logger",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "Organizing log outputs to console. Also possible to save logs to file",
   "main": "index.js",
+  "homepage": "https://github.com/puruslotion/extremely-simple-logger",
+  "repository": "puruslotion/extremely-simple-logger",
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/index.js",
