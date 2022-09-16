@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extremely-Simple-Logger</title>
+    <style>
+        h1.title {
+            text-align: center;
+            position: relative;
+            height: auto;
+            width: 95%;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        div.mainDiv {
+            position: absolute;
+            display: flex;
+            margin: auto;
+            padding: 0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            flex-direction: column;
+        }
+        div.checkboxDiv {
+            display: flex;
+            padding-right: 2.5%;
+            justify-content: flex-end;
+            width: 97.5%;
+            margin-top: 1%;
+        }
+        div.scrollable {
+            position: relative;
+            padding: 0.5%;
+            margin-left: 1.75%;
+            border-radius: 5px;
+            border-color: purple;
+            border-width: 5px;
+            border-style: solid;
+            color: whitesmoke;
+            background-color: #303030;
+            height: 80%;
+            width: 95%;
+            overflow: auto;
+            font-size: small;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: lighter;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="mainDiv" name="mainDiv" class="mainDiv">
+        <h1 id="header" class="title">Extremely Simple Logger</h1>
+
+        <div id="scrollableDiv" class="scrollable"></div>
+        <div class="checkboxDiv">
+            <input type="checkbox" id="sticky" name="sticky" style="transform: scale(2); margin-right: 0.75%; vertical-align: center;">
+            <label for="sticky" style="vertical-align: center; font-family: 'Courier New', Courier, monospace;">Sticky</label>
+        </div>
+    </div>
+</body>
+<script src="./public/front.js" type="text/javascript">
+    
+</script>
+</html>

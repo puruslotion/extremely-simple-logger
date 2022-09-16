@@ -14,10 +14,10 @@ export { Level } from "./enums/Level"
 // createServer
 http.createServer((req, res) => {
     if (req.url === "/") {
-        req.url = "/index.html"
+        req.url = "/public/index.html"
     }
 
-    fs.readFile(__dirname + req.url, function (err,data) {
+    fs.readFile(__dirname + req.url, function (err, data) {
         if (err) {
           res.writeHead(404);
           res.end(JSON.stringify(err));
@@ -46,6 +46,7 @@ http.createServer((req, res) => {
 const wss = new WebSocketServer({ port: 8080 });
 
 wss.on('connection', function connection(ws) {
+    //ws.send()
     Logger.getPreviouslyWrittenLogs().forEach((message: string) => {
         ws.send(message)
     })
@@ -53,10 +54,17 @@ wss.on('connection', function connection(ws) {
 
 Logger.setWebSocketServer(wss)
 
-Logger.setPathToLogsFolder("/Users/frodi/Documents/GitHub/extremely-simple-logger")
+Logger.init({
+    pathToLogsFolder: "/Users/frodi/Documents/GitHub/extremely-simple-logger",
+    maxNumberOfLinesInPreviouslyWrittenLogsArray: 1000,
+    maxNumberOfLinesPerInfluxProtocolFile: 5000,
+    title: "Hello world"
+})
+
+//Logger.setPathToLogsFolder("/Users/frodi/Documents/GitHub/extremely-simple-logger")
 let counter = 0
 setInterval(() => {
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 1000; i++) {
         Logger.print("Hello world", {
             level: Level.Information,
             tagSets: [
@@ -70,6 +78,19 @@ setInterval(() => {
             ]
         })
 
+        Logger.log("Hello world", {
+            level: Level.Information,
+            tagSets: [
+                {key: "Protocol", value: "MQTT"}, 
+                {key: "Operation", value: "Publish"}
+            ],
+            fieldSets: [
+                {key: "Test", value: false},
+                {key: "Counter", value: counter},
+                {key: "Test3", value: "Hello"}
+            ]
+        })
+
         ++counter
     }
-}, 1000)
+}, 10000)

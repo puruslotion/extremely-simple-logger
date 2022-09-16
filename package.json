@@ -6,7 +6,7 @@
   "homepage": "https://github.com/puruslotion/extremely-simple-logger",
   "repository": "puruslotion/extremely-simple-logger",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp ./src/public/index.html ./dist/public/index.html && cp ./package.json ./dist/package.json && cp ./README.md ./dist/README.md",
     "start": "node ./dist/index.js",
     "dev": "npm run build && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"

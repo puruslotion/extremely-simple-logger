@@ -12,6 +12,13 @@ import { TagSet } from "../types/TagSet";
 import { GZip } from "./GZip";
 import { WebSocketServer } from "ws";
 
+export type LoggerSettings = {
+    title?: string,
+    pathToLogsFolder: string,
+    maxNumberOfLinesPerInfluxProtocolFile?: number,
+    maxNumberOfLinesInPreviouslyWrittenLogsArray?: number
+}
+
 export class Logger {
     private static _title: string = "Extremely Simple Logger"
     private static _pathToLogsFolder: string = ""
@@ -21,6 +28,13 @@ export class Logger {
     private static _previouslyWrittenLogs: string[] = []
     private static _maxNumberOfPreviousWrittenLogs: number = 100
 
+    public static init(loggerSettings: LoggerSettings): void {
+        this.setTitle(loggerSettings?.title ?? "Extremely Simple Logger")
+        this.setPathToLogsFolder(loggerSettings?.pathToLogsFolder ?? "")
+        this._maxNumberOfWrittenLines = loggerSettings?.maxNumberOfLinesPerInfluxProtocolFile ?? 5000
+        this.setMaxNumberOfPreviouslyWrittenLogs(loggerSettings?.maxNumberOfLinesInPreviouslyWrittenLogsArray ?? 100)
+    }
+
     public static getTitle(): string {
         return this._title
     }
@@ -28,7 +42,7 @@ export class Logger {
     public static  setTitle(title: string) {
         this._title = title
     }
-    
+
     public static setPathToLogsFolder(path: string) {
         this._pathToLogsFolder = path
 
