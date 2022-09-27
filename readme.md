@@ -2,7 +2,7 @@
 Making it easy to write logs to console and/or saving logs to file. The format used is as follows:
 
 ```
-TIMESTAMP  LEVEL  [ TAG(s) ]  MESSAGE
+TIMESTAMP  LEVEL  [ TAG(s) ]  [ Field(s)]  MESSAGE
 ```
 
 The timestamp is in ISO format.
