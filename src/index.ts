@@ -1,9 +1,7 @@
 // imports
+import path from "path";
 import { Logger } from "./classes/Logger"
-import { Level } from "./enums/Level"
-import http from 'http'
-import fs from 'fs'
-import { WebSocketServer } from 'ws';
+import { Level } from "./enums/Level";
 
 // exports
 export { Logger } from "./classes/Logger"
@@ -11,70 +9,31 @@ export { BackgroundColor } from "./enums/BackgroundColor"
 export { ForegroundColor } from "./enums/ForegroundColor"
 export { Level } from "./enums/Level"
 
-// createServer
-http.createServer((req, res) => {
-    if (req.url === "/") {
-        req.url = "/public/index.html"
-    }
-
-    fs.readFile(__dirname + req.url, function (err, data) {
-        if (err) {
-          res.writeHead(404);
-          res.end(JSON.stringify(err));
-          return;
-        }
-
-        if (req?.url?.includes("index.html")) {
-            res.writeHead(200,{
-                'Content-Type': 'text/html'
-            });
-        } else if (req?.url?.includes("front.js")) {
-            res.writeHead(200,{
-                'Content-Type': 'text/javascript'
-            });
-        } else {
-            res.writeHead(404);
-            res.end(JSON.stringify({error: "File not available"}))
-            return
-        }
-        
-        res.end(data);
-      });
-}).listen(4000)
-
-// creating WebSocketServer
-const wss = new WebSocketServer({ port: 8080 });
-
-wss.on('connection', function connection(ws) {
-    //ws.send()
-    Logger.getPreviouslyWrittenLogs().forEach((message: string) => {
-        ws.send(message)
-    })
-});
-
-Logger.setWebSocketServer(wss)
+const serverPort = 4000;
+const webSocketServerPort = 8080
 
 Logger.init({
-    pathToLogsFolder: "/Users/frodi/Documents/GitHub/extremely-simple-logger",
+    pathToLogs: path.join(__dirname, "logs"),
     maxNumberOfLinesInPreviouslyWrittenLogsArray: 1000,
     maxNumberOfLinesPerInfluxProtocolFile: 5000,
-    title: "Hello world"
+    title: "Test"
 })
 
-//Logger.setPathToLogsFolder("/Users/frodi/Documents/GitHub/extremely-simple-logger")
+Logger.initServers(serverPort, webSocketServerPort)
+
 let counter = 0
 setInterval(() => {
-    for (let i = 0; i < 1000; i++) {
-        Logger.print("Hello world", {
+    for (let i = 0; i < 2; i++) {
+        Logger.print("Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world Hello world", {
             level: Level.Information,
             tagSets: [
                 {key: "Protocol", value: "MQTT"}, 
                 {key: "Operation", value: "Publish"}
             ],
-            fieldSet: [
-                {key: "Test", value: false},
-                {key: "Counter", value: counter},
-                {key: "Test3", value: "Hello"}
+            fieldSets: [
+                {key: "OxygenPercent", value: Math.random() * 200},
+                {key: "Status", value: Boolean(Math.round(Math.random()))},
+                {key: "test", value: "Hello"}
             ]
         })
 
@@ -85,12 +44,27 @@ setInterval(() => {
                 {key: "Operation", value: "Publish"}
             ],
             fieldSets: [
-                {key: "Test", value: false},
-                {key: "Counter", value: counter},
-                {key: "Test3", value: "Hello"}
+                {key: "OxygenPercent", value: Math.random() * 200},
+                {key: "Status", value: Boolean(Math.round(Math.random()))},
+                {key: "test", value: "Hello"}
             ]
         })
 
+        // Logger.saveToFileBeforeClosing()
+
         ++counter
     }
-}, 10000)
+}, 5000)
+
+process.on("SIGINT", async () => {
+    console.log("SIGINT")
+    await Logger.saveCurrentLogsToFile()
+    process.exit()
+})
+
+process.on("SIGTERM", async () => {
+    console.log("SIGTERM")
+    await Logger.saveCurrentLogsToFile()
+    process.exit()
+
+})

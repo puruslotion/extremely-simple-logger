@@ -75,6 +75,7 @@ export class LogData {
         if (typeof this._timestamp === "number") {
             return this._timestamp * 1000000
         }
+        
         return new Date(this._timestamp).getTime() * 1000000
     }
 

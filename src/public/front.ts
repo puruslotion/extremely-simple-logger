@@ -50,9 +50,25 @@ class LogData {
     }
 }
 
-const scrollableDivBackgroundColor = "#303030"
+enum Color {
+    LightYellow = "#f1e678",
+    Orange = "#ed8f60",
+    Pink = "#bf406c",
+    Purple = "#682a6e",
+    DeepPurle = "#2b1f46",
+    LightGreen = "rgb(0, 255, 130)",
+    LightBlue = "rgb(0, 180, 255)",
+    White = "white",
+    Red = "red",
+    Black = "black",
+    Cyan = "cyan",
+    Magenta = "magenta",
+    Green = "green",
+    Yellow = "yellow"
+}
+
 let scrollableDiv: HTMLDivElement = document.getElementById("scrollableDiv") as HTMLDivElement
-scrollableDiv.style.backgroundColor = scrollableDivBackgroundColor
+
 let sticky: HTMLInputElement = document.getElementById("sticky") as HTMLInputElement
 sticky.checked = true
 
@@ -91,145 +107,144 @@ function createParagraph() {
 
 function createLevel(level: string): HTMLSpanElement {
     switch(level.toLowerCase()) {
-        case "inf": return createSpan("white", " INF ", "green")
-        case "deb": return createSpan("white", " DEB ", "cyan")
-        case "war": return createSpan("black", " WAR ", "yellow")
-        case "err": return createSpan("white", " ERR ", "red")
-        case "fat": return createSpan("white", " FAT ", "magenta")
+        case "inf": return createSpan(Color.White, " INF ", Color.Green)
+        case "deb": return createSpan(Color.White, " DEB ", Color.Cyan)
+        case "war": return createSpan(Color.Black, " WAR ", Color.Yellow)
+        case "err": return createSpan(Color.White, " ERR ", Color.Red)
+        case "fat": return createSpan(Color.White, " FAT ", Color.Magenta)
         default: return createSpan("", "", "")
     }
 }
 
 function createTags(para: HTMLParagraphElement,  logData: LogData) {
-    if (!logData.tagSets) return
+    if (!logData.tagSets || logData.tagSets.length <= 1) return
 
-    para.appendChild(createSpan("white", "["))
+    para.appendChild(createSpan(Color.White, "["))
     
     let counter = 1
     
     for (let tagSet of logData.tagSets) {
         if (tagSet.key.toLowerCase() === "level") continue
 
-        para.appendChild(createSpan("white", tagSet.key + ": "))
-        para.appendChild(createSpan("rgb(238,130,238)", tagSet.value))
+        para.appendChild(createSpan(Color.White, tagSet.key + ": "))
+        para.appendChild(createSpan(Color.Orange, tagSet.value))
 
         if (counter === logData.tagSets.length - 1) {
             break
         }
 
-        para.appendChild(createSpan("white", ", "))
+        para.appendChild(createSpan(Color.White, ", "))
 
         ++counter
     }
 
-    para.appendChild(createSpan("white", "]"))
+    para.appendChild(createSpan(Color.White, "]"))
 }
 
 function createFieldSets(para: HTMLParagraphElement,  logData: LogData) {
-    if (!logData.tagSets) return
+    if (!logData.tagSets || logData.tagSets.length <= 1) return
 
-    para.appendChild(createSpan("white", "["))
+    para.appendChild(createSpan(Color.White, "["))
 
     let counter = 1
     
     for (let fieldSet of logData.fieldSets) {
         if (fieldSet.key.toLowerCase() === "message") continue
 
-        para.appendChild(createSpan("white", fieldSet.key + ": "))
+        para.appendChild(createSpan(Color.White, fieldSet.key + ": "))
 
         if (typeof fieldSet.value === "boolean") {
-            para.appendChild(createSpan("rgb(0, 150, 255)", String(fieldSet.value)))
+            para.appendChild(createSpan(Color.LightBlue, String(fieldSet.value)))
         } else if (typeof fieldSet.value === "number") {
-            para.appendChild(createSpan("cyan",  String(fieldSet.value)))
+            para.appendChild(createSpan(Color.LightGreen,  String(fieldSet.value)))
         } else {
-            para.appendChild(createSpan("lawngreen", "\"" + fieldSet.value + "\""))
+            para.appendChild(createSpan(Color.Orange, "\"" + fieldSet.value + "\""))
         }
 
         if (counter === logData.fieldSets.length - 1) {
             break
         }
 
-        para.appendChild(createSpan("white", ", "))
+        para.appendChild(createSpan(Color.White, ", "))
         
         ++counter
     }
 
-    para.appendChild(createSpan("white", "]"))
-
+    para.appendChild(createSpan(Color.White, "]"))
 }
 
 function printData(logData: LogData) {
     let para = createParagraph()
-    para.appendChild(createSpan("white", logData.timestamp.toString()))
-    para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
+    para.appendChild(createSpan(Color.White, logData.timestamp.toString()))
+    para.appendChild(createSpan(Color.DeepPurle, "."))
     
     para.appendChild(createLevel(logData.level))
-    para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
+    para.appendChild(createSpan(Color.DeepPurle, "."))
     
-    createTags(para, logData)
-    para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-
-    createFieldSets(para, logData)
-    para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-
-    para.appendChild(createSpan("white", logData.message))
+    if (logData?.tagSets?.length > 1) {
+        createTags(para, logData)
+        para.appendChild(createSpan(Color.DeepPurle, "."))
+    }
+    
+    if (logData?.fieldSets?.length > 1) {
+        createFieldSets(para, logData)
+        para.appendChild(createSpan(Color.DeepPurle, "."))
+    }
+    
+    para.appendChild(createSpan(Color.LightYellow, logData.message))
     
     scrollableDiv.appendChild(para)
 }
 
-let socket: WebSocket
+let webSocket: WebSocket
 
 function connect() {
-    socket = new WebSocket("ws://localhost:8080");
+    webSocket = new WebSocket(`ws://${window.location.hostname}:8080`);
 
-    socket.onopen = function(e) {
-        let para = createParagraph()
-        para.appendChild(createSpan("white", new Date().toISOString()))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-        para.appendChild(createLevel("inf"))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-        para.appendChild(createSpan("lawngreen", "Websocket open"))
-
-        scrollableDiv.appendChild(para)
+    webSocket.onopen = function(e) {
     };
 
-    socket.onmessage = function(event) {
+    webSocket.onmessage = function(event) {
         printData(JSON.parse(event.data) as LogData)
     };
 
-    socket.onclose = function(event) {
-        socket?.close()
+    webSocket.onclose = function(event) {
+        webSocket?.close()
 
         let para = createParagraph()
-        para.appendChild(createSpan("white", new Date().toISOString()))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
+        para.appendChild(createSpan(Color.White, new Date().toISOString()))
+        para.appendChild(createSpan(Color.DeepPurle, "."))
         para.appendChild(createLevel("war"))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-        para.appendChild(createSpan("orange", "Websocket closed"))
+        para.appendChild(createSpan(Color.DeepPurle, "."))
+        para.appendChild(createSpan(Color.Orange, "Websocket closed"))
 
         scrollableDiv.appendChild(para)
 
         setTimeout(connect, 5000);
     };
 
-    socket.onerror = function(error: any) {
-        socket?.close()
+    webSocket.onerror = function(error: any) {
+        webSocket?.close()
 
         let para = createParagraph()
-        para.appendChild(createSpan("white", new Date().toISOString()))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
+        para.appendChild(createSpan(Color.White, new Date().toISOString()))
+        para.appendChild(createSpan(Color.DeepPurle, "."))
         para.appendChild(createLevel("err"))
-        para.appendChild(createSpan(scrollableDivBackgroundColor, "."))
-        para.appendChild(createSpan("red", "Websocket error"))
+        para.appendChild(createSpan(Color.DeepPurle, "."))
+        para.appendChild(createSpan(Color.Red, "Websocket error"))
 
         scrollableDiv.appendChild(para)
     };
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function init() {
     let mainDiv: HTMLDivElement = document.getElementById("mainDiv") as HTMLDivElement
     mainDiv.style.width = window.innerWidth.toString() + "px"
     mainDiv.style.height = window.innerHeight.toString() + "px"
 
     connect()
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    init()
 })

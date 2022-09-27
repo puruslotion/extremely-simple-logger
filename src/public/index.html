@@ -11,9 +11,11 @@
             height: auto;
             width: 95%;
             font-family: 'Courier New', Courier, monospace;
+            color: #f1e678;
         }
         div.mainDiv {
             position: absolute;
+            background-color: #2b1f46;
             display: flex;
             margin: auto;
             padding: 0;
@@ -35,11 +37,10 @@
             padding: 0.5%;
             margin-left: 1.75%;
             border-radius: 5px;
-            border-color: purple;
             border-width: 5px;
             border-style: solid;
-            color: whitesmoke;
-            background-color: #303030;
+            border-color: #bf406c;
+            background-color: #2b1f46;
             height: 80%;
             width: 95%;
             overflow: auto;
@@ -47,6 +48,7 @@
             font-family: 'Courier New', Courier, monospace;
             font-weight: lighter;
             align-items: center;
+            scrollbar-color: #f1e678;
         }
     </style>
 </head>
@@ -56,12 +58,12 @@
 
         <div id="scrollableDiv" class="scrollable"></div>
         <div class="checkboxDiv">
-            <input type="checkbox" id="sticky" name="sticky" style="transform: scale(2); margin-right: 0.75%; vertical-align: center;">
-            <label for="sticky" style="vertical-align: center; font-family: 'Courier New', Courier, monospace;">Sticky</label>
+            <input type="checkbox" id="sticky" name="sticky" style="transform: scale(2); margin-right: 1%; vertical-align: center;">
+            <label for="sticky" style="vertical-align: center; font-family: 'Courier New', Courier, monospace; color: #f1e678;">Sticky</label>
         </div>
     </div>
 </body>
-<script src="./public/front.js" type="text/javascript">
+<script src="front.js" type="text/javascript">
     
 </script>
 </html>

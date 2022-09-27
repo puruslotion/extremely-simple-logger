@@ -15,5 +15,5 @@ export type PrintOptions = {
     tagForegroundColor?: ForegroundColor,
     tagBackgroundColor?: BackgroundColor
     tagStyle?: Style
-    fieldSet?: FieldSet[]
+    fieldSets?: FieldSet[]
 }

@@ -5,25 +5,35 @@ import { Logger } from './Logger';
 import { Level } from '../enums/Level';
 
 export class GZip {
-    public static compress(data: string, writePath: string) {
-        pipeline(data, zlib.createGzip(), fs.createWriteStream(writePath), (error) => {
-            if (error) {
-                Logger.print(error, {
-                    level: Level.Error,
-                    tagSets: [{key: "zlib", value: "createGzip"}]
-                })
-            }
-        });
+    public static async compress(data: string, writePath: string): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            pipeline(data, zlib.createGzip(), fs.createWriteStream(writePath), (error) => {
+                if (error) {
+                    Logger.print(error, {
+                        level: Level.Error,
+                        tagSets: [{key: "zlib", value: "createGzip"}]
+                    })
+                    reject(false)
+                }
+
+                resolve(true)
+            });
+        })
     }
 
-    public static decompress(readPath: string, writePath: string) {
-        pipeline(fs.createReadStream(readPath), zlib.createUnzip(), fs.createWriteStream(writePath), (error) => {
-            if (error) {
-                Logger.print(error, {
-                    level: Level.Error,
-                    tagSets: [{key: "zlib", value: "createGunzip"}]
-                })
-              }
+    public static async decompress(readPath: string, writePath: string): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            pipeline(fs.createReadStream(readPath), zlib.createUnzip(), fs.createWriteStream(writePath), (error) => {
+                if (error) {
+                    Logger.print(error, {
+                        level: Level.Error,
+                        tagSets: [{key: "zlib", value: "createUnzip"}]
+                    })
+                    reject(false)
+                }
+
+                resolve(true)
+            })
         })
     }
 }
