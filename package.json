@@ -1,6 +1,6 @@
 {
   "name": "extremely-simple-logger",
-  "version": "1.0.6",
+  "version": "1.0.12",
   "description": "Organizing log outputs to console. Also possible to save logs to file",
   "main": "index.js",
   "homepage": "https://github.com/puruslotion/extremely-simple-logger",
@@ -15,10 +15,11 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "18.7.14",
+    "@types/ws": "8.5.3",
     "typescript": "4.8.2"
   },
+  "keywords": ["logger", "log", "logs", "logging", "console", "print", "printing", "prints", "write", "writes", "writing", "color", "colors", "influxdb", "lineprotocol", "browser", "websocket"],
   "dependencies": {
-    "@types/ws": "^8.5.3",
-    "ws": "^8.8.1"
+    "ws": "8.8.1"
   }
 }
