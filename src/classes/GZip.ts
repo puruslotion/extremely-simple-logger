@@ -11,9 +11,12 @@ export class GZip {
                 if (error) {
                     Logger.print(error, {
                         level: Level.Error,
-                        tagSets: [{key: "zlib", value: "createGzip"}]
+                        tagSets: [{
+                            key: "zlib", 
+                            value: "createGzip"
+                        }]
                     })
-                    reject(false)
+                    reject(error)
                 }
 
                 resolve(true)
@@ -27,9 +30,12 @@ export class GZip {
                 if (error) {
                     Logger.print(error, {
                         level: Level.Error,
-                        tagSets: [{key: "zlib", value: "createUnzip"}]
+                        tagSets: [{
+                            key: "zlib", 
+                            value: "createUnzip"
+                        }]
                     })
-                    reject(false)
+                    reject(error)
                 }
 
                 resolve(true)

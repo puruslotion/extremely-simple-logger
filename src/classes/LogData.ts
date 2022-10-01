@@ -10,7 +10,7 @@ export class LogData {
     private _fieldSets: FieldSet[]
     private _measurementName: string
 
-    constructor(timestamp: string | number, level: string, message: string, measurenentName?: string, tagSets?: TagSet[], fieldSets?: FieldSet[]) {
+    constructor(timestamp: string | number, level: string, message: string, measurementName?: string, tagSets?: TagSet[], fieldSets?: FieldSet[]) {
         this._timestamp = timestamp
         this._level = level
         this._tagSets = tagSets ?? []
@@ -22,7 +22,7 @@ export class LogData {
 
         this._fieldSets.push({key: "Message", value: message})
         this._message = message
-        this._measurementName = measurenentName ?? "Logger"
+        this._measurementName = measurementName ?? "Logger"
     }
 
     public getTimestamp(): string | number {
@@ -30,7 +30,7 @@ export class LogData {
     }
 
     public getLevel(): string {
-        return this.getLevel()
+        return this._level
     }
 
     public getTagSets(): TagSet[] {
@@ -55,16 +55,16 @@ export class LogData {
 
     private getTagSetsForInfluxDb(): string {
         return this._tagSets.map((tagSet: TagSet) => {
-            return `${tagSet.key.replace(/,/gi, ",\\").replace(/=/, "\\=").replace(/ /gi, "\\ ")}=${tagSet.value.replace(/,/gi, ",\\").replace(/=/, "\\=").replace(/ /gi, "\\ ")}`
+            return `${tagSet.key.replace(/,/gi, ",\\").replace(/=/gi, "\\=").replace(/ /gi, "\\ ")}=${tagSet.value.replace(/,/gi, ",\\").replace(/=/gi, "\\=").replace(/ /gi, "\\ ")}`
         }).join(",")
     }
 
     private getFieldSetsForInfluxDb(): string {
         return this._fieldSets.map((fieldSet: FieldSet) => {
             if (typeof fieldSet.value === "string") {
-                return `${fieldSet.key.replace(/,/gi, ",\\").replace(/=/, "\\=").replace(/ /gi, "\\ ")}="${fieldSet.value.replace(/"/gi, "\\\"").replace(/\\/, "\\\\")}"`
+                return `${fieldSet.key.replace(/,/gi, ",\\").replace(/=/gi, "\\=").replace(/ /gi, "\\ ")}="${fieldSet.value.replace(/"/gi, "\\\"").replace(/\\/gi, "\\\\")}"`
             } else if (typeof fieldSet.value === "boolean" || typeof fieldSet.value === "number") {
-                return `${fieldSet.key.replace(/,/gi, ",\\").replace(/=/, "\\=").replace(/ /gi, "\\ ")}=${fieldSet.value}`
+                return `${fieldSet.key.replace(/,/gi, ",\\").replace(/=/gi, "\\=").replace(/ /gi, "\\ ")}=${fieldSet.value}`
             }
 
             return ""
@@ -75,7 +75,7 @@ export class LogData {
         if (typeof this._timestamp === "number") {
             return this._timestamp * 1000000
         }
-        
+
         return new Date(this._timestamp).getTime() * 1000000
     }
 

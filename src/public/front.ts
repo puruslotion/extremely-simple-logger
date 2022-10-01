@@ -8,6 +8,24 @@ type FieldSet = {
     value : string | number | boolean
 }
 
+class Settings {
+    private _webSocketServerPort: number
+    private _title: string
+
+    constructor(json: any) {
+        this._webSocketServerPort = json?.WebSocketServerPort
+        this._title = json?.Title ?? "Extremely Simple Logger"
+    }
+
+    public get webSocketServerPort(): number {
+        return this._webSocketServerPort
+    }
+
+    public get title(): string {
+        return this._title
+    }
+}
+
 class LogData {
     private _timestamp: string | number
     private _level: string
@@ -55,9 +73,10 @@ enum Color {
     Orange = "#ed8f60",
     Pink = "#bf406c",
     Purple = "#682a6e",
-    DeepPurle = "#2b1f46",
+    DeepPurle = "#181818",
     LightGreen = "rgb(0, 255, 130)",
     LightBlue = "rgb(0, 180, 255)",
+    DarkWhite = "#E1D9D1",
     White = "white",
     Red = "red",
     Black = "black",
@@ -67,6 +86,7 @@ enum Color {
     Yellow = "yellow"
 }
 
+let settings: Settings
 let scrollableDiv: HTMLDivElement = document.getElementById("scrollableDiv") as HTMLDivElement
 
 let sticky: HTMLInputElement = document.getElementById("sticky") as HTMLInputElement
@@ -119,63 +139,69 @@ function createLevel(level: string): HTMLSpanElement {
 function createTags(para: HTMLParagraphElement,  logData: LogData) {
     if (!logData.tagSets || logData.tagSets.length <= 1) return
 
-    para.appendChild(createSpan(Color.White, "["))
+    let tags = createSpan(Color.Pink, "Tags")
+    tags.style.fontWeight = "bold"
+    para.appendChild(tags)
+    para.appendChild(createSpan(Color.DarkWhite, "["))
     
     let counter = 1
     
     for (let tagSet of logData.tagSets) {
         if (tagSet.key.toLowerCase() === "level") continue
 
-        para.appendChild(createSpan(Color.White, tagSet.key + ": "))
-        para.appendChild(createSpan(Color.Orange, tagSet.value))
+        para.appendChild(createSpan(Color.DarkWhite, tagSet.key + ": "))
+        para.appendChild(createSpan(Color.Yellow, tagSet.value))
 
         if (counter === logData.tagSets.length - 1) {
             break
         }
 
-        para.appendChild(createSpan(Color.White, ", "))
+        para.appendChild(createSpan(Color.DarkWhite, ", "))
 
         ++counter
     }
 
-    para.appendChild(createSpan(Color.White, "]"))
+    para.appendChild(createSpan(Color.DarkWhite, "]"))
 }
 
 function createFieldSets(para: HTMLParagraphElement,  logData: LogData) {
     if (!logData.tagSets || logData.tagSets.length <= 1) return
 
-    para.appendChild(createSpan(Color.White, "["))
+    let fields = createSpan(Color.Pink, "Fields")
+    fields.style.fontWeight = "bold"
+    para.appendChild(fields)
+    para.appendChild(createSpan(Color.DarkWhite, "["))
 
     let counter = 1
     
     for (let fieldSet of logData.fieldSets) {
         if (fieldSet.key.toLowerCase() === "message") continue
 
-        para.appendChild(createSpan(Color.White, fieldSet.key + ": "))
+        para.appendChild(createSpan(Color.DarkWhite, fieldSet.key + ": "))
 
         if (typeof fieldSet.value === "boolean") {
             para.appendChild(createSpan(Color.LightBlue, String(fieldSet.value)))
         } else if (typeof fieldSet.value === "number") {
             para.appendChild(createSpan(Color.LightGreen,  String(fieldSet.value)))
         } else {
-            para.appendChild(createSpan(Color.Orange, "\"" + fieldSet.value + "\""))
+            para.appendChild(createSpan(Color.Yellow, "\"" + fieldSet.value + "\""))
         }
 
         if (counter === logData.fieldSets.length - 1) {
             break
         }
 
-        para.appendChild(createSpan(Color.White, ", "))
+        para.appendChild(createSpan(Color.DarkWhite, ", "))
         
         ++counter
     }
 
-    para.appendChild(createSpan(Color.White, "]"))
+    para.appendChild(createSpan(Color.DarkWhite, "]"))
 }
 
 function printData(logData: LogData) {
     let para = createParagraph()
-    para.appendChild(createSpan(Color.White, logData.timestamp.toString()))
+    para.appendChild(createSpan(Color.DarkWhite, logData.timestamp.toString().replace(/T/, " ").replace(/Z/, " UTC")))
     para.appendChild(createSpan(Color.DeepPurle, "."))
     
     para.appendChild(createLevel(logData.level))
@@ -191,7 +217,10 @@ function printData(logData: LogData) {
         para.appendChild(createSpan(Color.DeepPurle, "."))
     }
     
-    para.appendChild(createSpan(Color.LightYellow, logData.message))
+    let message = createSpan(Color.Pink, "Message: ")
+    message.style.fontWeight = "bold"
+    para.appendChild(message)
+    para.appendChild(createSpan(Color.DarkWhite, logData.message))
     
     scrollableDiv.appendChild(para)
 }
@@ -199,7 +228,7 @@ function printData(logData: LogData) {
 let webSocket: WebSocket
 
 function connect() {
-    webSocket = new WebSocket(`ws://${window.location.hostname}:8080`);
+    webSocket = new WebSocket(`ws://${window.location.hostname}:${settings.webSocketServerPort}`);
 
     webSocket.onopen = function(e) {
     };
@@ -212,7 +241,7 @@ function connect() {
         webSocket?.close()
 
         let para = createParagraph()
-        para.appendChild(createSpan(Color.White, new Date().toISOString()))
+        para.appendChild(createSpan(Color.DarkWhite, new Date().toISOString()))
         para.appendChild(createSpan(Color.DeepPurle, "."))
         para.appendChild(createLevel("war"))
         para.appendChild(createSpan(Color.DeepPurle, "."))
@@ -227,7 +256,7 @@ function connect() {
         webSocket?.close()
 
         let para = createParagraph()
-        para.appendChild(createSpan(Color.White, new Date().toISOString()))
+        para.appendChild(createSpan(Color.DarkWhite, new Date().toISOString()))
         para.appendChild(createSpan(Color.DeepPurle, "."))
         para.appendChild(createLevel("err"))
         para.appendChild(createSpan(Color.DeepPurle, "."))
@@ -237,14 +266,20 @@ function connect() {
     };
 }
 
-function init() {
+async function init() {
     let mainDiv: HTMLDivElement = document.getElementById("mainDiv") as HTMLDivElement
     mainDiv.style.width = window.innerWidth.toString() + "px"
     mainDiv.style.height = window.innerHeight.toString() + "px"
 
+    let response = await fetch("/settings")
+    settings = new Settings(await response.json())
+
+    let header: HTMLHeadingElement = document.getElementById("header") as HTMLHeadingElement
+    header.textContent = settings.title
+
     connect()
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     init()
 })

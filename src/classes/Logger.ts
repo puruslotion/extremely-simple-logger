@@ -16,7 +16,7 @@ import path from "path";
 
 export type LoggerSettings = {
     title?: string,
-    pathToLogs: string,
+    pathToLogs?: string,
     maxNumberOfLinesPerInfluxProtocolFile?: number,
     maxNumberOfLinesInPreviouslyWrittenLogsArray?: number
 }
@@ -30,6 +30,8 @@ export class Logger {
     private static _previouslyWrittenLogs: string[] = []
     private static _maxNumberOfPreviousWrittenLogs: number = 100
     private static _isWritingToFile = false
+    private static _serverPort = 0
+    private static _webSocketServerPort = 0
 
     public static init(loggerSettings: LoggerSettings): void {
         this.setTitle(loggerSettings?.title ?? "Extremely Simple Logger")
@@ -39,18 +41,32 @@ export class Logger {
     }
 
     public static initServers(serverPort: number = 4000, webSocketServerPort: number = 8080) {
-        this.startServer(serverPort)
-        this.startWebSocketServer(webSocketServerPort)
+        this._serverPort = serverPort
+        this._webSocketServerPort = webSocketServerPort
+        this.startServer()
+        this.startWebSocketServer()
     }
 
-    private static startServer(serverPort: number) {
+    private static startServer() {
         http.createServer((req, res) => {
             if (req.url === "/") {
                 req.url = "index.html"
             }
 
-            let p = path.join(__dirname, '..', 'public', req.url ?? "")
-            console.log(p)
+            if (req.url === "/settings") {
+                res.writeHead(200, {
+                    "Content-Type": "application/json"
+                })
+                res.end(JSON.stringify({
+                    WebSocketServerPort: this._webSocketServerPort,
+                    Title: this.getTitle()
+                }))
+
+                return
+            }
+
+            let uri = req.url?.replace(/\.\./gi, "") ?? ""
+            let p = path.join(__dirname, '..', 'public', uri)
         
             fs.readFile(p, function (err, data) {
                 if (err) {
@@ -63,44 +79,75 @@ export class Logger {
                     res.writeHead(200,{
                         'Content-Type': 'text/html'
                     });
+                    res.end(data);
+                    return
                 } else if (req?.url?.includes("front.js")) {
                     res.writeHead(200,{
                         'Content-Type': 'text/javascript'
                     });
+                    res.end(data);
+                    return
                 } else {
                     res.writeHead(404);
                     res.end(JSON.stringify({error: "File not available"}))
                     return
                 }
-                
-                res.end(data);
               });
-        }).listen(serverPort, () => {
-            Logger.print(`Server started on port: ${serverPort}`, {
-                level: Level.Information
+        }).listen(this._serverPort, () => {
+            this.print(`Server started on port: ${this._serverPort}`, {
+                level: Level.Information,
+                tagSets: [{
+                    key: "Server",
+                    value: "Started"
+                }]
             })
         })
     }
 
-    private static startWebSocketServer(webSocketServerPort: number) {
-        this._wss = new WebSocketServer({ port: webSocketServerPort });
+    private static startWebSocketServer() {
+        this._wss = new WebSocketServer({ port: this._webSocketServerPort });
 
         this._wss.on("listening", () => {
-            Logger.print(`WebSocket server started on port: ${webSocketServerPort}`, {
-                level: Level.Information
+            this.print(`WebSocket server started on port: ${this._webSocketServerPort}`, {
+                level: Level.Information,
+                tagSets: [{
+                    key: "WebSocketServer",
+                    value: "Started"
+                }]
             })
         })
         
-        this._wss.on('connection', function connection(ws) {
-            Logger.getPreviouslyWrittenLogs().forEach((message: string) => {
+        this._wss.on('connection', (ws, req) => {
+            this.getPreviouslyWrittenLogs().forEach((message: string) => {
                 ws.send(message)
+            })
+            this.print(`Client connected from ${req.socket.remoteAddress}`, {
+                level: Level.Information,
+                tagSets: [{
+                    key: "WebSocketServer",
+                    value: "Client connected"
+                }]
             })
         });
         
-        this._wss.on("error", () => {
+        this._wss.on("error", (error) => {
+            this.print(error, {
+                level: Level.Error,
+                tagSets: [{
+                    key: "WebSocketServer",
+                    value: "Error"
+                }]
+            })
         })
         
         this._wss.on("close", () => {
+            this.print("Close", {
+                level: Level.Warning,
+                tagSets: [{
+                    key: "WebSocketServer",
+                    value: "Close"
+                }]
+            })
         })
     }
 
@@ -132,9 +179,9 @@ export class Logger {
         let colorString = `${stringOptions?.style ?? Style.Default}`
         colorString += `${stringOptions?.backgroundColor ?? BackgroundColor.Default}`
         colorString += `${stringOptions?.foregroundColor ?? ForegroundColor.Default}`
-        colorString += Logger.convertAnyToString(message)
+        colorString += this.convertAnyToString(message)
 
-        return Logger.resetString(colorString)
+        return this.resetString(colorString)
     }
 
     public static print(message: any, printOptions?: PrintOptions) {
@@ -143,23 +190,23 @@ export class Logger {
 
         if (!printOptions?.timestamp) timestamp = new Date().toISOString()
 
-        logString += `${printOptions?.timestampStyle ?? Style.Default}${printOptions?.timestampBackgroundColor ?? BackgroundColor.Default}${printOptions?.timestampForegroundColor ?? ForegroundColor.Default}${printOptions?.timestamp ?? timestamp}${Style.Reset}`
+        logString += `${printOptions?.timestampStyle ?? Style.Default}${printOptions?.timestampBackgroundColor ?? BackgroundColor.Default}${printOptions?.timestampForegroundColor ?? ForegroundColor.Default}${printOptions?.timestamp ?? timestamp.replace(/T/gi, " ").replace(/Z/gi, " UTC")}${Style.Reset}`
 
         if (printOptions?.level) {
             logString += `  ${this.getLevel(printOptions.level)}`
         }
 
         if (printOptions?.tagSets) {
-            logString += `  ${"Tags".green().reset()}[ ${Style.Reset}${this.tagsToString(printOptions.tagSets)}${Style.Reset} ]`
+            logString += `  ${"Tags".green().reset()}[${Style.Reset}${this.tagsToString(printOptions.tagSets)}${Style.Reset}]`
         }
 
         if (printOptions?.fieldSets) {
-            logString += `  ${"Fields".green().reset()}[ ${Style.Reset}${this.fieldsToString(printOptions.fieldSets)}${Style.Reset} ]`
+            logString += `  ${"Fields".green().reset()}[${Style.Reset}${this.fieldsToString(printOptions.fieldSets)}${Style.Reset}]`
         }
 
-        logString += `  ${"Message: ".green().reset()}${Logger.convertAnyToString(message)}`
+        logString += `  ${"Message: ".green().reset()}${this.convertAnyToString(message)}`
 
-        process.stdout.write(`${Logger.resetString(logString)}\n`)
+        process.stdout.write(`${this.resetString(logString)}\n`)
 
         let logData = new LogData(timestamp, printOptions?.level ?? Level.Default, message, undefined, printOptions?.tagSets, printOptions?.fieldSets)
         let messageToSend = JSON.stringify({
@@ -170,7 +217,7 @@ export class Logger {
             message: logData.getMessage()
         })
 
-        this._wss.clients.forEach((ws) => {
+        this._wss?.clients?.forEach((ws) => {
             ws.send(messageToSend)
         })
 
@@ -200,10 +247,13 @@ export class Logger {
     }
 
     public static log(message: any, loggerOptions?: LoggerOptions): void {
-        if (this._pathToLogs === "") {
+        if (!this._pathToLogs) {
             this.print(`You need to set a path to logs folder with ${"setPathToLogsFolder()".yellow().reset()}. Message not saved: ${this.convertAnyToString(message).cyan()}`, {
                 level: Level.Error,
-                tagSets: [{key: "Type", value: "Logger"}]
+                tagSets: [{
+                    key: "LogsPath", 
+                    value: "Undefined"
+                }]
             })
 
             return
@@ -237,23 +287,23 @@ export class Logger {
             rainbowText += message[i]
         }
         
-        return Logger.resetString(rainbowText)
+        return this.resetString(rainbowText)
     }
 
     private static getLevel(level: Level): string {
         switch (level) {
             case Level.Information:
-                return `${Style.Reset}${BackgroundColor.Green}${ForegroundColor.Black} ${level} ${Style.Reset}`
+                return ` ${level} `.greenBg().black().reset()
             case Level.Warning:
-                return `${Style.Reset}${BackgroundColor.Yellow}${ForegroundColor.Black} ${level} ${Style.Reset}`
+                return ` ${level} `.yellowBg().black().reset()
             case Level.Error:
-                return `${Style.Reset}${BackgroundColor.Red}${ForegroundColor.White} ${level} ${Style.Reset}`
+                return ` ${level} `.redBg().white().reset()
             case Level.Fatal:
-                return `${Style.Reset}${BackgroundColor.Magenta}${ForegroundColor.White} ${level} ${Style.Reset}`
+                return ` ${level} `.magentaBg().white().reset()
             case Level.Debug:
-                return `${Style.Reset}${BackgroundColor.Blue}${ForegroundColor.White} ${level} ${Style.Reset}`
-            case Level.Default:
-                return Logger.resetString("")
+                return ` ${level} `.blueBg().white().reset()
+            default:
+                return this.resetString("")
         }
     }
 
@@ -299,7 +349,15 @@ export class Logger {
                 })
                 setTimeout(() => {}, 1000)
             } catch (error) {
-                reject(false)
+                this.print(error, {
+                    level: Level.Error,
+                    tagSets: [{
+                        key: "InfluxDB", 
+                        value: "Failed to write to file"
+                    }]
+                })
+
+                reject(error)
             }
         })
     }
